@@ -1,4 +1,14 @@
 import random
+import logging
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - [%(levelname)s] - %(message)s',
+    handlers=[
+        logging.FileHandler("sims_life.log", encoding="utf-8"),
+        logging.StreamHandler()
+    ]
+)
 
 job_list = {
     "Java developer": {"salary": 50, "gladness_less": 10},
@@ -66,21 +76,22 @@ class Human:
                 return
             self.satiety += 10
             self.home.food -= 5
+            logging.info(f"{self.name} поїв. Ситість: {self.satiety}, Їжі залишилось: {self.home.food}")
 
     def feed_pet(self):
         if self.home.pet_food <= 0:
             self.shopping("pet_food")
         else:
             if self.pet.satiety >= 100:
-                print(f"{self.pet.kind} is already full!")
+                logging.warning(f"Улюбленець {self.pet.kind} вже ситий!")
                 return
-            print(f"Feeding the {self.pet.kind}")
+            logging.info(f"Годуємо улюбленця {self.pet.kind}")
             self.pet.satiety += 20
             self.home.pet_food -= 5
             self.gladness += 5
 
     def play_with_pet(self):
-        print(f"Playing with {self.pet.kind}! So much fun!")
+        logging.info(f"Граємося з {self.pet.kind}! Веселощі!")
         self.gladness += self.pet.joy
         self.pet.satiety -= 10
         self.home.mess += self.pet.mess_power
@@ -98,6 +109,7 @@ class Human:
         self.money += self.job.salary
         self.gladness -= self.job.gladness_less
         self.satiety -= 4
+        logging.info(f"{self.name} сходив на роботу ({self.job.job}). Гроші: {self.money}")
 
     def shopping(self, manage):
         if self.car.drive():
@@ -110,71 +122,55 @@ class Human:
                 self.to_repair()
                 return
         if manage == "fuel":
-            print("I bought some fuel!")
+            logging.info("Куплено пальне для авто")
             self.money -= 100
             self.car.fuel += 100
         elif manage == "food":
-            print("I bought some food for myself")
+            logging.info("Куплено їжу для себе")
             self.money -= 50
             self.home.food += 50
         elif manage == "pet_food":
-            print(f"I bought food for my {self.pet.kind}")
+            logging.info(f"Куплено корм для {self.pet.kind}")
             self.money -= 30
             self.home.pet_food += 30
         elif manage == "delicacies":
-            print("Yay delicacies!")
+            logging.info("Вкусняшки! Настрій піднявся")
             self.gladness += 10
             self.satiety += 5
             self.money -= 10
 
     def chill(self):
+        logging.info(f"{self.name} відпочиває...")
         self.gladness += 10
         self.home.mess += 5
 
     def clean_home(self):
-        print("Cleaning the house...")
+        logging.info("Прибирання будинку...")
         self.gladness -= 5
         self.home.mess = 0
 
     def to_repair(self):
+        logging.warning("Авто зламалося! Терміновий ремонт.")
         self.car.strength += 100
         self.money -= 50
 
     def days_indexes(self, day):
-        day = f"Today is the {day} day of {self.name}'s life"
-        print(f"{day:^50}", "\n")
-        human_indexes = self.name + "'s indexes"
-        print(f"{human_indexes:-^50}", "\n")
-        print(f"Money: {self.money}")
-        print(f"Satiety: {self.satiety}")
-        print(f"Gladness: {self.gladness}")
-
-        home_indexes = "Home indexes"
-        print(f"{home_indexes:-^50}", "\n")
-        print(f"Food - {self.home.food}")
-        print(f"Pet Food - {self.home.pet_food}")
-        print(f"Mess - {self.home.mess}")
-
-        car_indexes = f"{self.car.brand} car indexes"
-        print(f"{car_indexes:-^50}", "\n")
-        print(f"Fuel - {self.car.fuel}")
-        print(f"Strength - {self.car.strength}")
-
+        logging.info(f"{f' День {day} ':^50}")
+        logging.info(f"Стан {self.name}: Гроші={self.money}, Ситість={self.satiety}, Радість={self.gladness}")
+        logging.info(f"Будинок: Їжа={self.home.food}, Корм={self.home.pet_food}, Бруд={self.home.mess}")
+        logging.info(f"Авто {self.car.brand}: Пальне={self.car.fuel}, Міцність={self.car.strength}")
         if self.pet:
-            pet_indexes = f"Pet ({self.pet.kind}) indexes"
-            print(f"{pet_indexes:-^50}", "\n")
-            print(f"Satiety - {self.pet.satiety}")
-        print("=" * 50)
+            logging.info(f"Пет ({self.pet.kind}): Ситість={self.pet.satiety}")
 
     def is_alive(self):
         if self.gladness < 0:
-            print("Depression...")
+            logging.critical(f"Критичний стан: {self.name} впав у депресію...")
             return False
         if self.satiety < 0:
-            print("Dead...")
+            logging.critical(f"Критичний стан: {self.name} помер від голоду...")
             return False
         if self.money < -500:
-            print("Bankrupt")
+            logging.critical(f"Критичний стан: Банкрутство!")
             return False
         return True
 
@@ -185,13 +181,13 @@ class Human:
             self.get_home()
         if self.car is None:
             self.get_car()
-            print(f"I bought a car {self.car.brand}")
+            logging.info(f"Куплено автомобіль {self.car.brand}")
         if self.job is None:
             self.get_job()
-            print(f"I get a job {self.job.job} with salary {self.job.salary}")
+            logging.info(f"Влаштувався на роботу: {self.job.job} із зарплатою {self.job.salary}")
         if self.pet is None:
             self.get_pet()
-            print(f"I adopted a {self.pet.kind}!")
+            logging.info(f"Усиновив тваринку: {self.pet.kind}!")
 
         self.days_indexes(day)
 
@@ -201,22 +197,21 @@ class Human:
         dice = random.randint(1, 6)
 
         if self.satiety < 20:
-            print("I'll go eat")
+            logging.warning("Рівень голоду критичний, час їсти")
             self.eat()
         elif self.pet.satiety < 20:
-            print("My pet is hungry!")
+            logging.warning("Тваринка голодна!")
             self.feed_pet()
         elif self.gladness < 20:
             if self.home.mess > 15:
                 self.clean_home()
             else:
-                print("Let's play with pet to feel better!")
+                logging.info("Поганий настрій, час пограти з петом")
                 self.play_with_pet()
         elif self.money < 0:
-            print("Start working")
+            logging.warning("Гроші закінчилися, треба працювати")
             self.work()
         elif self.car.strength < 15:
-            print("I repair my car")
             self.to_repair()
         elif dice == 1:
             self.chill()
@@ -245,7 +240,7 @@ class Auto:
             self.strength -= 1
             return True
         else:
-            print("The car cannot move")
+            logging.error("Машина не може зрушити з місця!")
             return False
 
 
